@@ -24,6 +24,7 @@ public class VotesharePrime {
     private static HashMap<String,String> adjusted_voteshares;
     private static HashMap<String,String> voteshares;
     private static HashMap<String,String> answers_timespan;
+    private int K = 1;
     private IndexReader iReader;
     private IndexSearcher iSearcher;
 
@@ -32,7 +33,7 @@ public class VotesharePrime {
         adjusted_voteshares = new HashMap<>();
         answers_timespan = new HashMap<>();
         voteshares = new HashMap<>();
-        iReader =  DirectoryReader.open(FSDirectory.open(Paths.get("C:\\paper_projects\\indexes\\Hw2Answers")));
+        iReader =  DirectoryReader.open(FSDirectory.open(Paths.get("D:\\University\\Information Retrieval 2\\Hws\\Hw1\\indexFiles\\Hw2Answers")));
         iSearcher = new IndexSearcher(iReader);
     }
 
@@ -40,9 +41,11 @@ public class VotesharePrime {
         init();
         HashMap<String,String> answers_timespan = TextReader.parseTimeSpans("in-files/AnswersTimespan.csv");
         voteshares = TextReader.read_process("in-files\\voteShare.txt", "\t");
-        getAdjustedVoteshares(answers_timespan, voteshares);
+        getAdjustedVoteshares(answers_timespan);
         HashMap<String, String> answers_votesharePrime = new HashMap<>();
-        for (String answer_Id : adjusted_voteshares.keySet()){
+        adjusted_voteshares.remove("-1");
+        voteshares.remove("-1");
+        for (String answer_Id : voteshares.keySet()){
             String q_id = getQuestionId(answer_Id);
             ArrayList<String> thread_answers_id;
             thread_answers_id = getThreadAnswersId(q_id);
@@ -113,11 +116,11 @@ public class VotesharePrime {
         return check;
     }
 
-    private void getAdjustedVoteshares(HashMap<String, String> answers_timespan, HashMap<String, String> vote_shares) {
-        for (String docId : vote_shares.keySet()) {
+    private void getAdjustedVoteshares(HashMap<String, String> answers_timespan) {
+        for (String docId : voteshares.keySet()) {
             if (Objects.equals(docId, "AId")) continue;
             try {
-                adjusted_voteshares.put(docId, String.valueOf(Double.parseDouble(vote_shares.get(docId)) / getAdjustedDenominator(answers_timespan.get(docId))));
+                adjusted_voteshares.put(docId, String.valueOf(Double.parseDouble(voteshares.get(docId)) / getAdjustedDenominator(answers_timespan.get(docId))));
             }
             catch (NumberFormatException ne){
                 ne.printStackTrace();
@@ -129,7 +132,7 @@ public class VotesharePrime {
         if (timespan==null){
             return 1.0;
         }
-        return (1.0 - Math.pow(Math.E, - (0.001)*(Double.parseDouble(timespan))));
+        return (1.0 - Math.pow(Math.E, -K * (Double.parseDouble(timespan))));
     }
 
     public static void main(String[] args) throws IOException, ParseException {
